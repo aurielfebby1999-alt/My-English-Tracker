@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tracker Belajar Bahasa Inggris</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap');
+  :root {
+    --blue-50: #EEF4FD; --blue-100: #D6E7FA; --blue-200: #AACDF5;
+    --blue-400: #5DA0E8; --blue-600: #2B76CC; --blue-800: #1A4E8A;
+    --surface: #F5F9FE; --card: #FFFFFF;
+    --text-main: #1A2E44; --text-sub: #5A7A9A; --text-hint: #8AAAC8;
+    --border: #D6E7FA; --radius: 12px; --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--surface); color: var(--text-main); min-height: 100vh; padding-bottom: 40px; }
+
+  /* SETUP BANNER */
+  .setup-banner {
+    background: #FFF8E1; border: 1px solid #FFD54F;
+    border-radius: var(--radius); padding: 16px; margin: 16px;
+    display: none;
+  }
+  .setup-banner.show { display: block; }
+  .setup-banner h3 { font-size: 14px; color: #E65100; margin-bottom: 8px; }
+  .setup-banner p { font-size: 13px; color: #5D4037; line-height: 1.6; }
+  .setup-input-wrap { display: flex; gap: 8px; margin-top: 10px; }
+  .setup-input {
+    flex: 1; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 10px 12px; font-size: 13px; font-family: inherit;
+    color: var(--text-main); background: var(--card);
+  }
+  .setup-save-btn {
+    background: var(--blue-600); color: #fff; border: none;
+    border-radius: var(--radius-sm); padding: 10px 16px;
+    font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+    white-space: nowrap;
+  }
+
+  .header {
+    background: linear-gradient(135deg, #2B76CC 0%, #5DA0E8 100%);
+    padding: 28px 20px 40px; text-align: center; position: relative; overflow: hidden;
+  }
+  .header::before { content: ''; position: absolute; top: -40px; right: -40px; width: 160px; height: 160px; border-radius: 50%; background: rgba(255,255,255,0.08); }
+  .header::after { content: ''; position: absolute; bottom: -20px; left: -20px; width: 100px; height: 100px; border-radius: 50%; background: rgba(255,255,255,0.06); }
+  .header h1 { color: #fff; font-size: 20px; font-weight: 600; }
+  .header p { color: rgba(255,255,255,0.75); font-size: 13px; margin-top: 4px; }
+  .sync-status { font-size: 11px; margin-top: 8px; color: rgba(255,255,255,0.6); }
+  .sync-status.ok { color: #A5D6A7; }
+  .sync-status.err { color: #FFAB91; }
+
+  .stats-wrap {
+    margin: -20px 16px 0; background: var(--card); border-radius: var(--radius);
+    border: 1px solid var(--border); display: grid; grid-template-columns: repeat(4, 1fr);
+    overflow: hidden; position: relative; z-index: 2;
+  }
+  .stat { padding: 16px 8px; text-align: center; border-right: 1px solid var(--border); }
+  .stat:last-child { border-right: none; }
+  .stat-num { font-size: 24px; font-weight: 600; color: var(--blue-600); }
+  .stat-label { font-size: 10px; color: var(--text-hint); margin-top: 3px; line-height: 1.3; }
+
+  .section { margin: 20px 16px 0; }
+  .section-label { font-size: 11px; font-weight: 600; color: var(--text-hint); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 10px; }
+
+  .days-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .day-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 8px; text-align: center; }
+  .day-card.today { border-color: var(--blue-400); box-shadow: 0 0 0 3px var(--blue-100); }
+  .day-card.done { background: var(--blue-50); border-color: var(--blue-200); }
+  .day-card.done .day-icon { filter: none; }
+  .day-card.done .check-badge { display: inline-flex; }
+  .day-icon { font-size: 22px; opacity: 0.5; }
+  .day-card.done .day-icon { opacity: 1; }
+  .day-name { font-size: 12px; font-weight: 600; color: var(--text-main); margin-top: 6px; }
+  .day-card.done .day-name { color: var(--blue-800); }
+  .day-focus { font-size: 10px; color: var(--text-sub); margin-top: 2px; }
+  .check-badge { display: none; align-items: center; justify-content: center; width: 16px; height: 16px; background: var(--blue-600); border-radius: 50%; margin: 4px auto 0; }
+  .check-badge::after { content: '✓'; font-size: 9px; color: #fff; font-weight: 700; }
+
+  .checkin-btn {
+    width: 100%; background: var(--blue-600); color: #fff; border: none;
+    border-radius: var(--radius); padding: 15px; font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; font-family: inherit;
+  }
+  .checkin-btn:hover:not(:disabled) { background: var(--blue-800); transform: translateY(-1px); }
+  .checkin-btn:disabled { background: var(--blue-200); color: var(--blue-600); cursor: not-allowed; }
+
+  .xp-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .xp-bar-bg { background: var(--blue-100); border-radius: 99px; height: 8px; margin: 10px 0 6px; overflow: hidden; }
+  .xp-bar-fill { background: var(--blue-400); height: 100%; border-radius: 99px; transition: width 0.5s ease; }
+  .xp-row { display: flex; justify-content: space-between; align-items: center; }
+  .xp-label { font-size: 12px; color: var(--text-sub); }
+  .xp-val { font-size: 13px; font-weight: 600; color: var(--blue-800); }
+  .next-milestone { font-size: 11px; color: var(--text-hint); }
+
+  .streak-grid { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .streak-dots { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
+  .streak-dot { width: 15px; height: 15px; border-radius: 3px; background: var(--blue-50); border: 1px solid var(--border); }
+  .streak-dot.filled { background: var(--blue-400); border-color: var(--blue-600); }
+  .streak-dot.today-dot { border: 2px solid var(--blue-600); }
+  .streak-info { font-size: 12px; color: var(--text-sub); }
+  .streak-count { font-size: 15px; font-weight: 600; color: var(--blue-800); margin-top: 4px; }
+
+  .rewards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .reward-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; display: flex; align-items: flex-start; gap: 10px; }
+  .reward-card.unlocked { background: var(--blue-50); border-color: var(--blue-200); }
+  .reward-card.locked { opacity: 0.5; }
+  .reward-icon-wrap { width: 36px; height: 36px; border-radius: 8px; background: var(--blue-100); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .reward-card.unlocked .reward-icon-wrap { background: var(--blue-200); }
+  .reward-title { font-size: 12px; font-weight: 600; color: var(--text-main); }
+  .reward-sub { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
+  .reward-status { font-size: 10px; font-weight: 600; color: var(--text-hint); margin-top: 4px; }
+  .reward-card.unlocked .reward-status { color: var(--blue-600); }
+
+  .quote-card { background: var(--blue-600); border-radius: var(--radius); padding: 18px 16px; position: relative; overflow: hidden; }
+  .quote-card::before { content: '"'; position: absolute; top: -10px; right: 12px; font-size: 80px; color: rgba(255,255,255,0.1); font-weight: 700; line-height: 1; }
+  .quote-text { font-size: 13px; color: rgba(255,255,255,0.95); line-height: 1.7; font-style: italic; }
+  .quote-refresh { background: rgba(255,255,255,0.15); border: none; border-radius: var(--radius-sm); color: #fff; font-size: 11px; font-weight: 600; padding: 6px 12px; margin-top: 12px; cursor: pointer; font-family: inherit; }
+  .quote-refresh:hover { background: rgba(255,255,255,0.25); }
+
+  .loading-overlay { text-align: center; padding: 40px 16px; color: var(--text-sub); font-size: 14px; }
+  .spinner { width: 28px; height: 28px; border: 3px solid var(--blue-100); border-top-color: var(--blue-400); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--blue-800); color: #fff; padding: 12px 22px; border-radius: 99px; font-size: 13px; font-weight: 500; opacity: 0; pointer-events: none; transition: opacity 0.3s; white-space: nowrap; z-index: 999; }
+  .toast.show { opacity: 1; }
+
+  .reset-btn { background: none; border: 1px solid var(--border); color: var(--text-hint); border-radius: var(--radius-sm); padding: 8px 16px; font-size: 12px; cursor: pointer; font-family: inherit; display: block; margin: 0 auto; }
+  .reset-btn:hover { border-color: #e07070; color: #c0504a; }
+</style>
+</head>
+<body>
+
+<!-- SETUP BANNER -->
+<div class="setup-banner show" id="setup-banner">
+  <h3>⚙️ Langkah pertama: hubungkan ke Google Sheets</h3>
+  <p>Paste URL Google Apps Script kamu di bawah ini. Lihat panduan di file <strong>PANDUAN_SETUP.txt</strong> untuk cara mendapatkan URL-nya.</p>
+  <div class="setup-input-wrap">
+    <input class="setup-input" id="script-url-input" type="text" placeholder="https://script.google.com/macros/s/..." />
+    <button class="setup-save-btn" onclick="saveScriptUrl()">Simpan</button>
+  </div>
+</div>
+
+<div class="header">
+  <h1>🎯 Tracker Belajar Bahasa Inggris</h1>
+  <p>Senin – Sabtu · 30 menit/malam · Target: Remote Working</p>
+  <div class="sync-status" id="sync-status">Menghubungkan ke Google Sheets...</div>
+</div>
+
+<div id="main-content">
+  <div class="loading-overlay" id="loading">
+    <div class="spinner"></div>
+    Memuat data dari Google Sheets...
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DAYS = [
+  { name: "Senin", focus: "Grammar", icon: "📖" },
+  { name: "Selasa", focus: "Listening", icon: "🎧" },
+  { name: "Rabu", focus: "Vocabulary", icon: "📝" },
+  { name: "Kamis", focus: "Writing", icon: "✏️" },
+  { name: "Jumat", focus: "Speaking", icon: "🎤" },
+  { name: "Sabtu", focus: "Praktik", icon: "💬" },
+];
+
+const REWARDS = [
+  { title: "Starter", desc: "Perjalanan dimulai!", icon: "⭐", req: 3 },
+  { title: "Seminggu Solid", desc: "6 hari konsisten", icon: "🔥", req: 6 },
+  { title: "Dua Minggu Kuat", desc: "Tidak mudah berhenti!", icon: "🏅", req: 12 },
+  { title: "Sebulan Penuh", desc: "24 sesi selesai!", icon: "🏆", req: 24 },
+  { title: "Intermediate Solid", desc: "Level B2 semakin dekat", icon: "🎓", req: 48 },
+  { title: "Remote Ready", desc: "Siap kerja internasional!", icon: "🌏", req: 72 },
+];
+
+const QUOTES = [
+  "Mulai dari 30 menit. Konsistensi kecil mengalahkan semangat besar yang tidak konsisten.",
+  "Setiap hari yang kamu belajar adalah satu langkah lebih dekat ke remote working.",
+  "Skip itu wajar. Yang penting langsung lanjut besoknya — jangan tunggu Senin!",
+  "Bahasa Inggris bukan soal bakat. Ini soal kebiasaan yang kamu bangun setiap malam.",
+  "Template kamu akan jauh lebih mudah dijual saat kamu lancar bahasa Inggris.",
+  "Progress kecil setiap hari lebih berharga dari semangat besar yang hanya muncul sesekali.",
+  "Kamu sudah memilih untuk berkembang. Itu saja sudah luar biasa.",
+];
+
+let SCRIPT_URL = localStorage.getItem('eng_script_url') || '';
+let state = { sessions: [], totalXP: 0, weekDone: [], lastCheckin: null };
+
+function saveScriptUrl() {
+  const val = document.getElementById('script-url-input').value.trim();
+  if (!val.startsWith('https://script.google.com')) {
+    showToast('❌ URL tidak valid. Pastikan dimulai dengan https://script.google.com');
+    return;
+  }
+  SCRIPT_URL = val;
+  localStorage.setItem('eng_script_url', SCRIPT_URL);
+  document.getElementById('setup-banner').classList.remove('show');
+  loadFromSheets();
+}
+
+function getTodayKey() { return new Date().toISOString().slice(0, 10); }
+function getWeekDayIdx() { const d = new Date().getDay(); return d === 0 ? -1 : d - 1; }
+
+function calcStreak() {
+  if (!state.sessions.length) return 0;
+  const sorted = [...new Set(state.sessions)].sort().reverse();
+  let streak = 0, check = new Date(); check.setHours(0,0,0,0);
+  for (let s of sorted) {
+    const d = new Date(s); d.setHours(0,0,0,0);
+    if (Math.round((check - d) / 86400000) <= 1) { streak++; check = d; } else break;
+  }
+  return streak;
+}
+
+function calcWeekSessions() {
+  const now = new Date(); now.setHours(0,0,0,0);
+  const mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay()+6)%7));
+  return state.sessions.filter(s => new Date(s) >= mon).length;
+}
+
+async function loadFromSheets() {
+  if (!SCRIPT_URL) { renderUI(); return; }
+  setSyncStatus('Memuat data...', '');
+  try {
+    const res = await fetch(SCRIPT_URL + '?action=load');
+    const data = await res.json();
+    state = { sessions: data.sessions || [], totalXP: data.totalXP || 0, weekDone: data.weekDone || [], lastCheckin: data.lastCheckin || null };
+    setSyncStatus('✓ Tersinkron dengan Google Sheets', 'ok');
+  } catch(e) {
+    setSyncStatus('⚠ Gagal terhubung — cek URL script', 'err');
+  }
+  renderUI();
+}
+
+async function doCheckin() {
+  const today = getTodayKey();
+  const todayIdx = getWeekDayIdx();
+  if (state.lastCheckin === today || todayIdx === -1) return;
+
+  document.getElementById('checkin-btn').disabled = true;
+  setSyncStatus('Menyimpan ke Google Sheets...', '');
+
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'checkin', date: today }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      state.sessions = data.sessions;
+      state.totalXP = data.totalXP;
+      state.weekDone = data.weekDone;
+      state.lastCheckin = data.lastCheckin;
+      const streak = calcStreak();
+      if (streak > 0 && streak % 6 === 0) showToast('🎉 Streak ' + streak + ' hari! Bonus +20 XP!');
+      else showToast('✨ +10 XP · Streak ' + streak + ' hari · Terus semangat!');
+      setSyncStatus('✓ Data tersimpan ke Google Sheets', 'ok');
+    } else {
+      showToast('⚠ ' + (data.error || 'Gagal menyimpan'));
+      setSyncStatus('⚠ Gagal menyimpan', 'err');
+    }
+  } catch(e) {
+    showToast('❌ Tidak bisa terhubung ke Google Sheets');
+    setSyncStatus('⚠ Gagal terhubung', 'err');
+  }
+  renderUI();
+}
+
+async function resetData() {
+  if (!confirm('Reset semua data? Ini tidak bisa dibatalkan.')) return;
+  try {
+    await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'reset' }) });
+    state = { sessions: [], totalXP: 0, weekDone: [], lastCheckin: null };
+    showToast('Data berhasil direset.');
+    setSyncStatus('✓ Data direset', 'ok');
+    renderUI();
+  } catch(e) { showToast('❌ Gagal reset'); }
+}
+
+function setSyncStatus(msg, cls) {
+  const el = document.getElementById('sync-status');
+  el.textContent = msg; el.className = 'sync-status ' + cls;
+}
+
+function renderUI() {
+  const XP_MILESTONES = [30, 60, 120, 240, 480, 720];
+  const streak = calcStreak();
+  const total = state.sessions.length;
+  const weekCount = calcWeekSessions();
+  const xp = state.totalXP;
+  const todayIdx = getWeekDayIdx();
+  const today = getTodayKey();
+
+  let nextMilestone = XP_MILESTONES.find(m => xp < m) || XP_MILESTONES[XP_MILESTONES.length-1];
+  let prevMilestone = 0;
+  for (let m of XP_MILESTONES) { if (xp >= m) prevMilestone = m; else break; }
+  const pct = nextMilestone === prevMilestone ? 100 : Math.min(100, Math.round(((xp - prevMilestone) / (nextMilestone - prevMilestone)) * 100));
+  const nextReward = REWARDS.find(r => total < r.req);
+
+  const daysHTML = DAYS.map((d, i) => {
+    const done = state.weekDone.includes(i);
+    const isToday = i === todayIdx;
+    return `<div class="day-card ${done ? 'done' : ''} ${isToday ? 'today' : ''}">
+      <div class="day-icon">${d.icon}</div>
+      <div class="day-name">${d.name}</div>
+      <div class="day-focus">${d.focus}</div>
+      <div class="check-badge"></div>
+    </div>`;
+  }).join('');
+
+  let streakDots = '';
+  const sessions = new Set(state.sessions);
+  for (let i = 27; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0,10);
+    streakDots += `<div class="streak-dot ${sessions.has(key) ? 'filled' : ''} ${key === today ? 'today-dot' : ''}"></div>`;
+  }
+
+  const rewardsHTML = REWARDS.map(r => {
+    const unlocked = total >= r.req;
+    return `<div class="reward-card ${unlocked ? 'unlocked' : 'locked'}">
+      <div class="reward-icon-wrap">${r.icon}</div>
+      <div>
+        <div class="reward-title">${r.title}</div>
+        <div class="reward-sub">${r.desc}</div>
+        <div class="reward-status">${unlocked ? '✓ Unlocked!' : r.req + ' sesi'}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const checkinDisabled = state.lastCheckin === today || todayIdx === -1;
+  const checkinLabel = state.lastCheckin === today ? '✓  Sudah belajar hari ini! Keren!' : todayIdx === -1 ? '🌿  Hari Minggu — waktu istirahat!' : '✓  Tandai hari ini selesai belajar!';
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="stats-wrap">
+      <div class="stat"><div class="stat-num">${streak}</div><div class="stat-label">Streak hari</div></div>
+      <div class="stat"><div class="stat-num">${total}</div><div class="stat-label">Total sesi</div></div>
+      <div class="stat"><div class="stat-num">${weekCount}</div><div class="stat-label">Minggu ini</div></div>
+      <div class="stat"><div class="stat-num">${xp}</div><div class="stat-label">Total XP</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Hari ini</div>
+      <div class="days-grid">${daysHTML}</div>
+    </div>
+
+    <div class="section">
+      <button class="checkin-btn" id="checkin-btn" onclick="doCheckin()" ${checkinDisabled ? 'disabled' : ''}>${checkinLabel}</button>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Progress XP</div>
+      <div class="xp-card">
+        <div class="xp-row">
+          <span class="xp-label">XP terkumpul</span>
+          <span class="xp-val">${xp} / ${nextMilestone} XP</span>
+        </div>
+        <div class="xp-bar-bg"><div class="xp-bar-fill" style="width:${pct}%"></div></div>
+        <div class="next-milestone">${nextReward ? 'Milestone: ' + nextReward.title + ' (' + nextReward.req + ' sesi)' : '🎉 Semua milestone terbuka!'}</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Streak 28 hari</div>
+      <div class="streak-grid">
+        <div class="streak-info">Setiap kotak = 1 hari belajar</div>
+        <div class="streak-count">Streak aktif: ${streak} hari 🔥</div>
+        <div class="streak-dots">${streakDots}</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Reward milestone</div>
+      <div class="rewards-grid">${rewardsHTML}</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Motivasi hari ini</div>
+      <div class="quote-card">
+        <div class="quote-text" id="quote-text"></div>
+        <button class="quote-refresh" onclick="renderQuote()">↻ Ganti motivasi</button>
+      </div>
+    </div>
+
+    <div class="section" style="margin-top:28px;">
+      <button class="reset-btn" onclick="resetData()">Reset semua data</button>
+    </div>
+  `;
+  renderQuote();
+}
+
+function renderQuote() {
+  const el = document.getElementById('quote-text');
+  if (el) el.textContent = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Init
+if (SCRIPT_URL) {
+  document.getElementById('setup-banner').classList.remove('show');
+  document.getElementById('script-url-input') && (document.getElementById('script-url-input').value = SCRIPT_URL);
+  loadFromSheets();
+} else {
+  document.getElementById('loading').style.display = 'none';
+  renderUI();
+}
+</script>
+</body>
+</html>
